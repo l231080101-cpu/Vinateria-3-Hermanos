@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <link rel="stylesheet" href="generador.css">
+    <title>Gestión de Usuarios - Vinatería Los 3 Hermanos</title>
+    
+</head>
+<body>
+    <div class="header">
+        <nav class="nav-bar">
+        <div class="nav-container">
+            <a href="#inicio" class="nav-btn">
+                <span class="nav-icon"></span>
+                <span>Inicio</span>
+            </a>
+            <a href="#catalogo" class="nav-btn">
+                <span class="nav-icon"></span>
+                <span>Catálogo</span>
+            </a>
+            <button class="nav-btn active">
+                <span class="nav-icon"></span>
+                <span>Administración</span>
+            </button>
+            <button class="nav-btn">
+                <span class="nav-icon"></span>
+                <span>Administrador</span>
+            </button>
+            <button class="nav-btn">
+                <span class="nav-icon"></span>
+                <span>Salir</span>
+            </button>
+        </div>
+    </nav>
+
+        <h1>🍷 Gestión de Usuarios - Vinatería Los 3 Hermanos</h1>
+    </div>
+
+    
+    <div class="container">
+        <div class="stats">
+            <div class="stat-card">
+                <h3 id="totalUsers">0</h3>
+                <p>Total de Usuarios</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="activeUsers">0</h3>
+                <p>Usuarios Activos</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="adminUsers">0</h3>
+                <p>Administradores</p>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Buscar por nombre, email o rol...">
+                <span class="search-icon">🔍</span>
+            </div>
+            <button class="btn btn-primary" onclick="openModal()">+ Nuevo Usuario</button>
+            <button class="btn btn-secondary" onclick="exportData()">Exportar CSV</button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Fecha Registro</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="userTable">
+                    <!-- Los usuarios se cargarán aquí -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal para crear/editar usuario -->
+    <div class="modal" id="userModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Nuevo Usuario</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="userForm" onsubmit="saveUser(event)">
+                <input type="hidden" id="userId">
+                <div class="form-group">
+                    <label for="userName">Nombre Completo *</label>
+                    <input type="text" id="userName" required>
+                </div>
+                <div class="form-group">
+                    <label for="userEmail">Email *</label>
+                    <input type="email" id="userEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="userPhone">Teléfono</label>
+                    <input type="tel" id="userPhone">
+                </div>
+                <div class="form-group">
+                    <label for="userRole">Rol *</label>
+                    <select id="userRole" required>
+                        <option value="usuario">Usuario</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="userStatus">Estado *</label>
+                    <select id="userStatus" required>
+                        <option value="activo">Activo</option>
+                        <option value="inactivo">Inactivo</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let users = [
+            {
+                id: 1,
+                name: "Carlos Martínez",
+                email: "carlos@example.com",
+                phone: "+52 555-1234",
+                role: "admin",
+                status: "activo",
+                date: "2024-01-15"
+            },
+            {
+                id: 2,
+                name: "María López",
+                email: "maria@example.com",
+                phone: "+52 555-5678",
+                role: "usuario",
+                status: "activo",
+                date: "2024-02-20"
+            },
+            {
+                id: 3,
+                name: "Juan Pérez",
+                email: "juan@example.com",
+                phone: "+52 555-9012",
+                role: "usuario",
+                status: "inactivo",
+                date: "2024-03-10"
+            }
+        ];
+
+        let editingId = null;
+
+        function renderUsers(usersToRender = users) {
+            const tbody = document.getElementById('userTable');
+            tbody.innerHTML = '';
+
+            usersToRender.forEach(user => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>#${user.id}</td>
+                    <td>${user.name}</td>
+                    <td>${user.email}</td>
+                    <td><span class="badge badge-${user.role}">${user.role === 'admin' ? 'Administrador' : 'Usuario'}</span></td>
+                    <td><span class="badge badge-${user.status}">${user.status === 'activo' ? 'Activo' : 'Inactivo'}</span></td>
+                    <td>${formatDate(user.date)}</td>
+                    <td class="actions">
+                        <button class="btn btn-secondary btn-small" onclick="editUser(${user.id})">Editar</button>
+                        <button class="btn btn-danger btn-small" onclick="deleteUser(${user.id})">Eliminar</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('totalUsers').textContent = users.length;
+            document.getElementById('activeUsers').textContent = users.filter(u => u.status === 'activo').length;
+            document.getElementById('adminUsers').textContent = users.filter(u => u.role === 'admin').length;
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function openModal() {
+            editingId = null;
+            document.getElementById('modalTitle').textContent = 'Nuevo Usuario';
+            document.getElementById('userForm').reset();
+            document.getElementById('userId').value = '';
+            document.getElementById('userModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('userModal').classList.remove('active');
+        }
+
+        function editUser(id) {
+            editingId = id;
+            const user = users.find(u => u.id === id);
+            if (!user) return;
+
+            document.getElementById('modalTitle').textContent = 'Editar Usuario';
+            document.getElementById('userId').value = user.id;
+            document.getElementById('userName').value = user.name;
+            document.getElementById('userEmail').value = user.email;
+            document.getElementById('userPhone').value = user.phone;
+            document.getElementById('userRole').value = user.role;
+            document.getElementById('userStatus').value = user.status;
+            document.getElementById('userModal').classList.add('active');
+        }
+
+        function saveUser(e) {
+            e.preventDefault();
+
+            const userData = {
+                name: document.getElementById('userName').value,
+                email: document.getElementById('userEmail').value,
+                phone: document.getElementById('userPhone').value,
+                role: document.getElementById('userRole').value,
+                status: document.getElementById('userStatus').value
+            };
+
+            if (editingId) {
+                const index = users.findIndex(u => u.id === editingId);
+                users[index] = { ...users[index], ...userData };
+            } else {
+                const newUser = {
+                    id: users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1,
+                    ...userData,
+                    date: new Date().toISOString().split('T')[0]
+                };
+                users.push(newUser);
+            }
+
+            renderUsers();
+            closeModal();
+        }
+
+        function deleteUser(id) {
+            if (confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
+                users = users.filter(u => u.id !== id);
+                renderUsers();
+            }
+        }
+
+        function exportData() {
+            const csv = [
+                ['ID', 'Nombre', 'Email', 'Teléfono', 'Rol', 'Estado', 'Fecha Registro'],
+                ...users.map(u => [u.id, u.name, u.email, u.phone, u.role, u.status, u.date])
+            ].map(row => row.join(',')).join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'usuarios_vinateria.csv';
+            a.click();
+        }
+
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filtered = users.filter(user => 
+                user.name.toLowerCase().includes(searchTerm) ||
+                user.email.toLowerCase().includes(searchTerm) ||
+                user.role.toLowerCase().includes(searchTerm)
+            );
+            renderUsers(filtered);
+        });
+
+        renderUsers();
+    </script>
+</body>
+</html>
